@@ -59,7 +59,8 @@ for fromAbove in range(2):
                     if sliceX.stop - sliceX.start >= Lx or sliceY.stop - sliceY.start >= Ly:
                         area[where(area == maxArea)] = 0 # remove the percolating cluster
             
-            currentBins = histogram(area, bins=bins, weights=area)[0]
+#            currentBins = histogram(area, bins=bins, weights=area)[0]
+            currentBins = histogram(area, bins=bins)[0].astype(float)
             currentBins /= maxBinArea
             totalBins += currentBins
     #        totalBins += totalAreas / float(maxBinArea)
