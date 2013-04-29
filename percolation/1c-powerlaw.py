@@ -8,12 +8,14 @@ Created on Tue Apr  9 18:24:43 2013
 from pylab import *
 
 z = rand(1e7)**(-3+1)
-mybins = histogram(z, bins=logspace(0,log10(z.max()) / 2,100))
+myBins = histogram(z, bins=logspace(0,log10(z.max()) / 2,100))
+inEachBin = myBins[0]
+#inEachBin /= diff(myBins[1])
 #gca().set_xscale("log")
 
-cumulativeDistribution = cumsum(mybins[0]) / float(sum(mybins[0]))
+cumulativeDistribution = cumsum(inEachBin) / float(sum(inEachBin))
 figure()
-zbins = mybins[1][:-1]
+zbins = myBins[1][:-1]
 semilogx(zbins, cumulativeDistribution)
 title("Cumulative distribution")
 xlabel("z")
