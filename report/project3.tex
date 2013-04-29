@@ -3,38 +3,6 @@
 
 \usepackage{dragly-revtex}
 
-\usepackage{longtable}
-% \usepackage{fontspec}
-% \definecolor{stringcolor}{rgb}{0,0.67,0}
-% \definecolor{keywordcolor}{rgb}{0,0,1}
-% \definecolor{numbercolor}{rgb}{0.5,0,0}
-% \definecolor{commentcolor}{rgb}{0.4,0.4,0.4}
-% \definecolor{backgroundcolor}{rgb}{0.99,0.99,0.99}
-% \definecolor{rulecolor}{rgb}{0.9,0.9,0.9}
-% \newfontfamily\listingsfont[Scale=0.85]{Droid Sans Mono} 
-% \lstset {
-%   basicstyle=\footnotesize\listingsfont,
-%   keywordstyle=\color{blue}\footnotesize\listingsfont,
-%   stringstyle=\color{stringcolor}\footnotesize\listingsfont,
-%   commentstyle=\color{commentcolor}\footnotesize\listingsfont,
-%   numberstyle=\color{numbercolor}\footnotesize\listingsfont,
-%   identifierstyle=\footnotesize\listingsfont,
-%   backgroundcolor=\color{backgroundcolor},
-%   breakatwhitespace=true,         % sets if automatic breaks should only happen at whitespace
-%   breaklines=true,                 % sets automatic line breaking
-% %   numbers=left,                    % where to put the line-numbers; possible values are (none, left, right)
-%   numbersep=5pt,                   % how far the line-numbers are from the code
-%   frame=lrtb,                    % adds a frame around the code
-%   framexleftmargin=7pt,
-%   framexrightmargin=7pt,
-%   framextopmargin=7pt,
-%   framexbottommargin=7pt,
-%   xleftmargin=18pt,
-%   xrightmargin=18pt,
-%   rulecolor=\color{rulecolor},
-%   tabsize=2,                       % sets default tabsize to 2 spaces
-% }
-
 \begin{document}
 
 \title{FYS4460 Project 3}
@@ -57,6 +25,7 @@ Percolation is the study of connectivity and other properties in random media. W
 For the reference (and to give myself somewhere to look up stuff), I've listed the definitions used throughout this project in table \ref{tab:definitions}.
 \begingroup
 \begin{table}[ht]
+\setlength\extrarowheight{4pt} % or whatever amount is appropriate
 \begin{ruledtabular}
 \begin{tabular}{l p{.31\textwidth}}
 Term       &                  Definition \\
@@ -79,6 +48,7 @@ abc
 There are also a set of properties that we will explore, such as the probability for a site to be part of the spanning cluster and the probability for a spanning cluster to exist at all. These are listed in table \ref{tab:properties}.
 \begingroup
 \begin{table}[ht]
+\setlength\extrarowheight{4pt} % or whatever amount is appropriate
 \begin{ruledtabular}
 \begin{tabular}{l p{.37\textwidth}}
 Property       &                  Definition \\
@@ -91,6 +61,8 @@ $s$             &       Denotes the size of a cluster \\
 $\xi(p,L)$      &       Correlation length \\
 $sn(s,p,L)$     &       Probability for a site to belong to a cluster of size $s$. \\
 $n(s,p,L)$      &       Cluster density - a useful property that among other things is used to find $sn(s,p,L)$ \\
+$S(p)$          &       Average cluster size.
+
 \end{tabular}
 \end{ruledtabular}
 \caption{Properties that will be explored in this project}
@@ -98,13 +70,37 @@ $n(s,p,L)$      &       Cluster density - a useful property that among other thi
 \end{table}
 \endgroup
 
+\subsection{One-dimensional percolation theory}
+
+We use a few findings from one-dimensional percolation theory to build up our intuition for finite-dimensional percolation theory.
+
+\subsubsection{Verifying the normalized density}
+%
+From one-dimensional percolation theory, we need to verify that $sn(s,p)$ is a normalized density. This is discussed in section 2.2 of the syllabus, and will be elaborated here for future reference.
+\begin{equation}
+  \sum_{s} sn(s,p) = \sum_{s=1}^{\infty} sp^{s} (1-p)^{2} = (1-p)^{2} p \sum_{s = 1}^{\infty} sp^{s-1}
+\end{equation} 
+Adding a term for $s = 0$ to the sum changes nothing because $0 \cdot p^{0 - 1} = 0$. This lets us rewrite the above as
+\begin{equation}
+  \sum_{s} sn(s,p) = (1-p)^{2} p \sum_{s = 0}^{\infty} sp^{s-1}.
+\end{equation} 
+This is written with the extra $p$ outside the sum to exploit the derivative of $p^s$,
+\begin{equation}
+  \sum_{s} sn(s,p) = (1-p)^{2} p \frac{d}{dp }\sum_{s = 0}^{\infty} p^{s}.
+\end{equation}
+Further, we use the summation rule $\sum_{s=0}^{\infty} p^s = 1/(1-p)$ to find
+\begin{equation}
+  \sum_{s} sn(s,p) = p.
+\end{equation}
+This shows that $sn(s,p)$ is a normalized density.
+
 \section{Implementation}
 
 Python has been used as the main programming language for this project. To do this, I needed to find the relevant functions to use in Python that corresponds to the listed functions in MATLAB.
 
 \subsection{Working with percolation clusters in Python}
-
-\emph{For original article, see \href{http://dragly.org/2013/03/25/working-with-percolation-clusters-in-python/}{this webpage}.}
+%
+\emph{For the original article, see \href{http://dragly.org/2013/03/25/working-with-percolation-clusters-in-python/}{this webpage}.}
 
 First of all, we need to include the pylab package together with the scipy.ndimage.measurements package:
 %
@@ -295,7 +291,7 @@ The result is shown in figure \ref{fig:powerlaw-cumulative-distribution}. Taking
 \begin{equation}
   f_{Z}(z) = \frac{dP(Z > z)}{dz}
 \end{equation} 
-After calculating this, we take the logarithm of both $f_{Z}(z)$ and $z$ and plot these against each other in figure \ref{fig:powerlaw-distribution}. This shows us that we clearly have a distribution on the form $f_{Z}(z) \propto z^{\alpha}$ where $\alpha$ is the incline of the curve in figure \ref{fig:powerlaw-distribution}. To find this exactly, we may take the numeric derivative and plot it as shown in figure \ref{fig:powerlaw-distribution-derivative}. Here we clearly see that the value for $\alpha$ is approximately $\alpha = -0.5$.
+After calculating this, we take the logarithm of both $f_{Z}(z)$ and $z$ and calculate the incline of the curve. To find this exactly, we may take the numeric derivative and plot it as shown in figure \ref{fig:powerlaw-distribution-derivative}. Here we clearly see that the value for $\alpha$ is approximately $\alpha = -0.5$.
 \begin{figure}
   \centering
   \includegraphics[width=0.45\textwidth]{../percolation/results/1c/cumulative-distribution.pdf}
@@ -303,18 +299,18 @@ After calculating this, we take the logarithm of both $f_{Z}(z)$ and $z$ and plo
   \caption{Cumulative distribution of the randomly selected data points.}
   \label{fig:powerlaw-cumulative-distribution}
 \end{figure}
-\begin{figure}
-  \centering
-  \includegraphics[width=0.45\textwidth]{../percolation/results/1c/distribution.pdf}
-  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
-  \caption{Cumulative distribution of the randomly selected data points.}
-  \label{fig:powerlaw-distribution}
-\end{figure}
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=0.45\textwidth]{../percolation/results/1c/distribution.pdf}
+%   % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+%   \caption{Cumulative distribution of the randomly selected data points.}
+%   \label{fig:powerlaw-distribution}
+% \end{figure}
 \begin{figure}
   \centering
   \includegraphics[width=0.45\textwidth]{../percolation/results/1c/distribution-derivative.pdf}
   % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
-  \caption{Cumulative distribution of the randomly selected data points.}
+  \caption{Derivative of the logarithm of the cumulative distribution of the randomly selected data points.}
   \label{fig:powerlaw-distribution-derivative}
 \end{figure}
 
@@ -346,7 +342,10 @@ It is interesting to see what happens to the cluster number density as $p$ appro
   \label{fig:cluster-number-density}
 \end{figure*}
 
-Furthermore, we might be interested in seeing how the cluster number density $n(s,p)$ as a function of $s$ varies with the system size $L$. This is shown in figure \ref{fig:cluster-number-density-systemsize}
+\subsection{Finding $\tau$}
+
+Furthermore, we are interested in seeing how the cluster number density at $p_c$ varies as a function of $s$ with the system size $L$. This is shown in figure \ref{fig:cluster-number-density-systemsize}.
+%
 \begin{figure}
   \centering
   \includegraphics[width=0.45\textwidth]{../percolation/results/1f/n-vs-s-nsamples10000.pdf}
@@ -354,7 +353,94 @@ Furthermore, we might be interested in seeing how the cluster number density $n(
   \caption{Cluster number density $n(s,p_c)$ as function of $s$ for different system sizes.}
   \label{fig:cluster-number-density-systemsize}
 \end{figure}
+%
+This is interesting because we assume that $F(s/s_{\xi}) = 1$ at $p_c$. This is what we find in 1-dimensional percolation theory, where $F(s/s_{\xi}) = e^{-s/s_{\xi}}$ and $s_{\xi} = -1 / \ln p$. When $p=p_{c}$, we get $s_{\xi} = \infty$ and assume something similar to happen in 2-dimensional systems. 
 
-This allows us to estimate $\tau$. %TODO Estimate tau
+With $s/s_{\xi} = 0$, we get $F(s/s_{\xi}) = 1$ and the cluster number density at $p_{c}$ becomes only
+\begin{equation}
+  n(s,p_{c}) = s^{-\tau}
+\end{equation} 
+In all, we may use this to find $\tau$. In figure \ref{fig:cluster-number-density-systemsize} we see that with increasing $L$, there is a loglog trend towards a line with decreasing incline. If we could increase $L$ to extreme sizes, we may estimate the true value of $\tau$, but we are pretty much stuck with $L \leq 2048$ for this project. However, we could plot the estimate $\tau$ as a function of $L$ and see if this converges to the real value. 
+
+This is done in figure \ref{fig:tau-vs-systemsize}.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1f/inclines-nsamples1000.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{$\tau$ fetched as incline from the different plots in figure \ref{fig:cluster-number-density-systemsize} as a function of system size $L$.}
+  \label{fig:tau-vs-systemsize}
+\end{figure}
+%
+We see that $\tau$ goes toward the true value of $\tau = 187/91 \approx 2.055$, but it would be hard to deduce this without knowing $\tau$ beforehand. In principle it is possible to use numerical methods to fit the curve in this figure, but it appeared somewhat tedious to do and was therefore not done in this project. The most clever method appears to be to use SciPy's \lstinlinebox{curve_fit} function. For now, the best we can guarantee from our data is that
+\begin{equation}
+  \tau > 1.94.
+\end{equation} 
+
+\subsection{Scaling of characteristic cluster size}
+
+If we assume that the characteristic cluster size is proportional to $p - p_{c}$ through
+\begin{equation}
+  s_{\xi} \sim |p - p_{c}|^{1/\sigma}
+\end{equation} 
+we may plot $s_{\xi}$ against $|p-p_{c}$ to find $\sigma$. To do this, we first have to gather some data on the relation between the two.
+
+We start out with the definition
+\begin{equation}
+  n(s,p) = s^{-\tau} F(s/s_{\xi})
+\end{equation} 
+to find
+\begin{equation}
+  \frac{n(s,p)}{n(s,p_{c})} = \frac{s^{-\tau}}{s^{-\tau}} \frac{F(s/s_{\xi})}{F(0)},
+\end{equation} 
+where we have used that $s_{\xi} = \infty$ at $p=p_{c}$. Further we assume that $F(0) = 1$ in 2 dimensions as it does in 1 dimension. This allows us to rewrite the ratio as
+\begin{equation}
+  \frac{n(s,p)}{n(s,p_{c})} = F(s/s_{\xi}).
+\end{equation}
+This is plotted in figure \ref{fig:scaling-ratio} as a function of $s$.
+
+We don't yet know the function $F$, but we may use that we expect the function to go drastically towards $0$ as $s\to s_{\xi}$. If we intersect $F$ at a given value that will be close to where it goes to zero could therefore be a good estimate of $s_{\xi}$. If we do this for multiple systems with different $p$, we may finally plot $s_{\xi}$ as a function of $|p-p_{c}|$. This is shown in figure \ref{fig:sxi-vs-p} where $L = 1024$ has been used.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1g/n-vs-s-L1024-nsamples100-frombelow.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{$n(s,p)/n(s,p_{c})$ ratio as a function of $s$ for different $p$ for $L=1024$.}
+  \label{fig:scaling-ratio}
+\end{figure}
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1g/sxi-L1024-nsamples100-frombelow.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{$s_{\xi}$ as a function of $p$ for $L=1024$.}
+  \label{fig:sxi-vs-p}
+\end{figure}
+
+Taking the loglog of this plot and finding the incline lets us estimate $\sigma$ as $-1/\sigma$ of the incline. This was found to be
+\begin{equation}
+  \sigma = 0.394
+\end{equation} 
+which is pretty close to the true value of $\sigma = 0.396$. However, choosing a different set of $p$ might yield other results (as found by fellow students) as well as a different choice in system size.
+
+\subsection{Mass scaling}
+
+The mass $M(L)$ of the percolating cluster is shown in figure \ref{fig:mass-scaling}. This is once more an exponential function. Taking the logarithms of $M$ and $L$ and finding the incline gives us the scaling parameter $D$:
+\begin{equation}
+  M(L) = L^{D}
+\end{equation}
+It was found by taking the derivative of the loglog version of figure \ref{fig:mass-scaling} to be
+\begin{equation}
+  D \approx 1.86.
+\end{equation} 
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1h/M-vs-L-nsamples10000.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{Mass of the percolating cluster as a function of $L$.}
+  \label{fig:mass-scaling}
+\end{figure}
+
+\subsection{Finite size scaling}
+
+
 
 \end{document}
