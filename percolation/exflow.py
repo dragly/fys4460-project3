@@ -6,7 +6,8 @@ Created on Mon Apr 29 10:52:03 2013
 """
 
 from pylab import *
-from scipy.sparse import spdiags, dia_matrix
+from scipy.sparse import spdiags, dia_matrix, coo_matrix
+#from scipy.sparse.linalg import spsolve
 from scipy.ndimage import measurements
 
 #
@@ -16,17 +17,25 @@ from scipy.ndimage import measurements
 # Calculates the effective flow conductance Ceff of the
 # lattice A as well as the pressure P in every site .
 def FIND_COND (A , X , Y ):
-    P_in = 1
-    P_out = 0
+    P_in = 1.
+    P_out = 0.
     # Calls MK_EQSYSTEM .
     B,C = MK_EQSYSTEM (A , X , Y )
+    #print "B"
+    #print B.todense()
+    #print "C"
+    #print C
     # Kirchhoff ’ s equations solve for P
-    P = linalg.lstsq(B,C)
+    P = linalg.solve(B.todense(),C)
     # The pressure at the external sites is added
     # ( Boundary conditions )
-    P = array([ P_in * ones (X), P,  P_out * ones (X)])
+    P = concatenate((P_in * ones (X), P,  P_out * ones (X)))
     # Calculate Ceff
-    Ceff = (P [-1 -2* X +1:-1 - X] - P_out ).T * A[-1 -2* X +1:-1 -X ,1] / ( P_in - P_out )
+    Ceff = (P[-1-2*X+1:-1-X] - P_out).T * A[-1-2*X+1:-1-X, 1] / ( P_in - P_out )
+    #print "P"
+    #print P
+    #print "Ceff"
+    #print Ceff
     return P , Ceff
 
 #
@@ -38,30 +47,33 @@ def FIND_COND (A , X , Y ):
 # the first column the bond perpendicular to the flow direction
 # and the second column the bond parallel to the flow direction .
 #
-# The return values are [B , t ] where B * x = C . This is solved
+# The return values are [B , C ] where B * x = C . This is solved
 # for the site pressure by x = B \ C .
 
 def MK_EQSYSTEM (A , X , Y ):
     # Total no of internal lattice sites
-    sites = X *( Y -2)
+    sites = X *( Y - 2)
+    #print "sites:", sites
     # Allocate space for the nonzero upper diagonals
     main_diag = zeros(sites)
     upper_diag1 = zeros(sites - 1)
     upper_diag2 = zeros(sites - X)
     # Calculates the nonzero upper diagonals
-    main_diag = A[X + 1 - 1 : X * ( Y - 1)  - 1, 1 - 1] + A[ X + 1  - 1 : X * ( Y - 1)  - 1, 2  - 1] + A [ 1  - 1: X *( Y -2)  - 1, 2 - 1] + A [ X  - 1: X *( Y -1) -1  - 1, 1 - 1]
-    upper_diag1 = A [ X +1 - 1: X *( Y -1) -1  - 1, 1 - 1]
-    upper_diag2 = A [ X +1 - 1: X *( Y -2)  - 1, 2 - 1]
-    main_diag [ where ( main_diag ==0)] = 1
+    #print A
+    main_diag = A[X:X*(Y-1), 0] + A[X:X*(Y-1), 1] + A[0:X*(Y-2), 1] + A[X-1:X*(Y-1)-1, 0]
+    upper_diag1 = A [X:X*(Y-1)-1, 0]
+    upper_diag2 = A [X:X*(Y-2), 1]
+    main_diag[where(main_diag == 0)] = 1
     # Constructing B which is symmetric , lower = upper diagonals .
-    B = dia_matrix ( (sites , sites) ) # B *u = t
+    B = dia_matrix ((sites , sites)) # B *u = t
     B = - spdiags ( upper_diag1 , -1 , sites , sites )
     B = B + - spdiags ( upper_diag2 ,-X , sites , sites )
     B = B + B.T + spdiags ( main_diag , 0 , sites , sites )
     # Constructing C
-    C = dia_matrix ( (sites , 1 - 1) )
-    C[1: X] = A[1 - 1: X  - 1, 2 - 1]
-    C[ -1 - X +1 - 1: -1 ] = 0* A [ -1 -2* X +1: -1 - X  ,2 - 1]
+    C = zeros(sites)
+    #    C = dia_matrix ( (sites , 1) )
+    C[0:X] = A[0:X, 1]
+    C[-1-X+1:-1] = 0*A [-1 -2*X + 1:-1-X, 1]
     return B , C
 
 def sitetobond ( z ):
@@ -78,34 +90,37 @@ def sitetobond ( z ):
     # g = zeros (N ,2)
     gg_r = zeros ((nx , ny)) # First , find these
     gg_d = zeros ((nx , ny )) # First , find these
-    gg_r [: ,1 - 1: ny -1 - 1] = z [: ,1 - 1: ny -1 - 1] * z [: ,2 - 1: ny  - 1]
+    gg_r [:, 0:ny - 1] = z [:, 0:ny - 1] * z [:, 1:ny]
     gg_r [: , ny  - 1] = z [: , ny  - 1]
-    gg_d [1 - 1: nx -1  - 1,:] = z [1 - 1: nx -1 - 1 ,:] * z [2 - 1: nx  - 1,:]
-    gg_d [ nx  - 1,:] = 0
+    gg_d [0:nx - 1, :] = z [0:nx - 1, :] * z [1:nx, :]
+    gg_d [nx - 1, :] = 0
+    #print "gg_r"
+    #print gg_r
+    #print "gg_d"
+    #print gg_d
     # Then , concatenate gg onto g
-#    ii = range(nx * ny )
-#    print ii
-    g = zeros ( (nx *ny ,2))
-    g [: ,1 - 1] = gg_d.reshape(-1).T
-    
-    g [: ,2 - 1] = gg_r.reshape(-1).T
+    g = zeros ((nx *ny ,2))
+    g [:, 0] = gg_d.reshape(-1,order='F').T
+    g [:, 1] = gg_r.reshape(-1,order='F').T
     return g
     
-def coltomat (z ,x , y ):
+def coltomat (z, x, y):
     # Convert z ( x * y ) into a matrix of z (x , y )
     # Transform this onto a nx x ny lattice
     g = zeros ((x , y))
-    for iy in range(y):
-        i = (iy - 1) * x + 1 - 1
-        ii = i + x - 1 - 1
-        g[: , iy - 1] = z[ i : ii ]
+    #print "For"
+    for iy in range(1,y):
+        i = (iy - 1) * x + 1
+        ii = i + x - 1
+        #print iy, i, ii
+        g[: , iy - 1] = z[ i - 1 : ii]
     return g
 
 if __name__ == "__main__":
     # First , find the backbone
     # Generate spanning cluster (l - r spanning )
-    lx = 5
-    ly = 5
+    lx = 25
+    ly = 25
     p = 0.5927
     ncount = 0
     perc = []
@@ -113,62 +128,83 @@ if __name__ == "__main__":
     while (len(perc)==0):
         ncount = ncount + 1
         if (ncount >100):
-            print "Couldn't make percolation cluster..."
+            #print "Couldn't make percolation cluster..."
             break
         
         z=rand(lx,ly)<p
+#        z = array([[1,1,1,1,1],[1,1,1,0,1],[0,1,1,0,1],[0,1,1,1,0],[1,0,1,0,1]])
         lw,num = measurements.label(z)
         perc_x = intersect1d(lw[0,:],lw[-1,:])
         perc = perc_x[where(perc_x > 0)]
-        print "Percolation attempt", ncount
-        
-
+        #print "Percolation attempt", ncount
+    
+    #print "z="
+    #print z*1
     labelList = arange(num + 1)
     clusterareas = measurements.sum(z, lw, index=labelList)
     areaImg = clusterareas[lw]
     maxarea = clusterareas.max()
     i = where ( clusterareas == maxarea )
-    zz = lw == i 
+    zz = asarray((lw == i))
     # zz now contains the spanning cluster
     # Transpose
     zzz = zz.T
 #    # Generate bond lattice from this
     g = sitetobond ( zzz )
+#    figure()
+#    imshow(g[:,0].reshape(lx,ly), interpolation='nearest')
+#    figure()
+#    imshow(g[:,1].reshape(lx,ly), interpolation='nearest')
+#    figure()
+#    imshow(zzz, interpolation='nearest')
 #    # Generate conductivity matrix
-#    [ p c_eff ] = FIND_COND (g , lx , ly )
+    p, c_eff = FIND_COND (g, lx, ly)
 #    # Transform this onto a nx x ny lattice
-#    x = coltomat ( full ( p ) , lx , ly )
-#    P = x .* zzz 
-#    g1 = g (: ,1)
-#    g2 = g (: ,2)
-#    z1 = coltomat ( g1 , lx , ly )
-#    z2 = coltomat ( g2 , lx , ly )
+    x = coltomat ( p , lx , ly )
+    P = x * zzz 
+    g1 = g[:,0]
+    g2 = g[: ,1]
+    z1 = coltomat( g1 , lx , ly )
+    z2 = coltomat( g2 , lx , ly )
 #    # Plotting
+    figure()
+    imshow(zzz, interpolation='nearest')
+    title("Spanning cluster")
 #    subplot (2 ,2 ,1) , imagesc ( zzz )
 #    title ( " Spanning cluster ")
 #    axis equal
+    figure()
+    imshow(P, interpolation='nearest')
+    title("Pressure")
 #    subplot (2 ,2 ,2) , imagesc ( P )
 #    title ( " Pressure " )
 #    axis equal
-#    f2 = zeros ( lx , ly )
-#    for iy in range(ly -1):
-#        f2[: , iy ] = ( P [: , iy ] - P [: , iy +1]) * z2 [: , iy ]
+    f2 = zeros ( (lx , ly ))
+    for iy in range(ly -1):
+        f2[: , iy ] = ( P [: , iy ] - P [: , iy +1]) * z2 [: , iy ]
 #        
-#    f1 = zeros ( (lx , ly ))
-#    for ix = 1: lx -1
-#        f1[ ix ,:] = ( P [ ix ,:] - P [ ix +1 ,:]) * z1 [ ix ,:]
+    f1 = zeros ( (lx , ly ))
+    for ix in range(lx-1):
+        f1[ ix ,:] = ( P [ ix ,:] - P [ ix +1 ,:]) * z1 [ ix ,:]
 #    
 #    # Find the sum of absolute fluxes into each site
-#    fn = zeros (( lx , ly ))
-#    fn = fn + abs ( f1 )
-#    fn = fn + abs ( f2 )
-#    fn [: ,2: ly ] = fn [: ,2: ly ] + abs ( f2 [: ,1: ly -1])
-#    fn [: ,1] = fn [: ,1] + abs (( P [: ,1] - 1.0).*( zzz [: ,1]))
-#    fn [2: lx ,:] = fn [2: lx ,:] + abs ( f1 [1: lx -1 ,:])
+    fn = zeros (( lx , ly ))
+    fn = fn + abs ( f1 )
+    fn = fn + abs ( f2 )
+    fn [: ,1: ly ] = fn [: ,1: ly ] + abs ( f2 [: ,0: ly -1])
+    fn [: ,0] = fn [: ,0] + abs (( P [: ,0] - 1.0)*( zzz [: ,0]))
+    fn [1: lx ,:] = fn [1: lx ,:] + abs ( f1 [0: lx -1 ,:])
+    figure()
+    imshow(fn, interpolation='nearest')
+    #print "fn"
+    #print fn
 #    subplot (2 ,2 ,3) , imagesc ( fn )
-#    title ( " Flux " )
-#    zfn = fn > limit 
-#    zbb = ( zzz + 2* zfn )
-#    zbb = zbb / max ( max ( zbb ))
+    title ( " Flux " )
+    zfn = fn > 2
+    zbb = ( zzz + 2* zfn )
+    zbb = zbb / zbb.max()
+    figure()
+    imshow(zbb, interpolation='nearest')
 #    subplot (2 ,2 ,4) , imagesc ( zbb )
-#    title ( " BB and DE ")
+    title ( " BB and DE ")
+    show()
