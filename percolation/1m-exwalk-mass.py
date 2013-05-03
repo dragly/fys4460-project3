@@ -13,16 +13,18 @@ pc = 0.59275
 
 # exwalk.py 
 # Generate spanning cluster (l-r spanning)
-L = [25,50,100,200,400,800]
-L = [25,50,100]
-p = linspace(0.58, 0.62, 20)
-nSamples = 100
-
+L = [25,50,100,200,400,600]
+#L = [25,50,75,100,125,150,200]
+nSamples = 5000
+p = pc
+Msc = zeros(len(L))
+idString = "nSamples" + str(nSamples)
 for i in range(len(L)):
+    print "L=" + str(L[i])
     lx = ly = L[i]
-    Msc = zeros(len(p))
-    for j in range(len(p)):
-        print "L=" + str(L[i]) + ", p=" + str(p[j])
+    if L[i] > 150:
+        nSamples = 10
+    for sample in range(nSamples):
         ncount = 0
         perc = []
         
@@ -32,22 +34,18 @@ for i in range(len(L)):
                 print "Couldn't make percolation cluster..."
                 break
             
-            z=rand(lx,ly)<p[j]
+            z=rand(lx,ly)<p
             lw,num = measurements.label(z)
             perc_x = intersect1d(lw[0,:],lw[-1,:])
             perc = perc_x[where(perc_x > 0)]
-            print ncount
+#            print ncount
         
         if len(perc) > 0:
-            labelList = arange(num + 1)
-            area = measurements.sum(z, lw, index=labelList)
-            areaImg = area[lw]
-            maxArea = area.max()
-            zz = (areaImg == area.max())
+            zz = (lw == perc[0])
             # zz now contains the spanning cluster
-#            figure()
-#            imshow(zz, interpolation='nearest', origin='upper') # Display spanning cluster
-#            savefig("current.pdf")
+    #            figure()
+    #            imshow(zz, interpolation='nearest', origin='upper') # Display spanning cluster
+    #            savefig("current.pdf")
             #show()
             #% Run walk on this cluster
             l,r = walk(zz)    
@@ -55,7 +53,19 @@ for i in range(len(L)):
         #    imshow(l, interpolation='nearest', origin='upper')
         #    figure()
         #    imshow(r, interpolation='nearest', origin='upper')
-            zzz = l*r # Find points where both l and r are non-zero
-            Msc[j] = sum(zzz > 0)
-    plot(p - pc, Msc)
+            zzz = (l*r > 0) # Find points where both l and r are non-zero
+            Msc[i] += sum(zzz)
+    Msc[i] /= nSamples
+figure()
+plot(L, Msc)
+xlabel(r"$L$")
+ylabel(r"$M_{SC}$")
+savefig("results/1m/M-vs-L-" + idString + ".pdf")
+figure()
+plot(log10(L), log10(Msc))
+xlabel(r"$\log L$")
+ylabel(r"$\log M_{SC}$")
+savefig("results/1m/loglog-M-vs-L-" + idString + ".pdf")
+DSC = (log10(Msc)[-1] - log10(Msc)[0]) / (log10(L)[-1] - log10(L)[0])
+print DSC
 show()

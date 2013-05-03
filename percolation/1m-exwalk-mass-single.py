@@ -9,53 +9,46 @@ from pylab import *
 from scipy.ndimage import measurements
 from walk import walk
 
+colormap = "GnBu_r"
+
 pc = 0.59275
 
 # exwalk.py 
 # Generate spanning cluster (l-r spanning)
-L = [25,50,100,200,400,800]
-L = [25,50,75,100,125,150,200]
-nSamples = 10
-p = pc
-Msc = zeros(len(L))
-for i in range(len(L)):
-    for sample in range(nSamples):
-        lx = ly = L[i]
-        print "L=" + str(L[i])
-        ncount = 0
-        perc = []
-        
-        while (len(perc)==0):
-            ncount = ncount + 1
-            if (ncount >100):
-                print "Couldn't make percolation cluster..."
-                break
-            
-            z=rand(lx,ly)<p
-            lw,num = measurements.label(z)
-            perc_x = intersect1d(lw[0,:],lw[-1,:])
-            perc = perc_x[where(perc_x > 0)]
-            print ncount
-        
-        if len(perc) > 0:
-            labelList = arange(num + 1)
-            area = measurements.sum(z, lw, index=labelList)
-            areaImg = area[lw]
-            maxArea = area.max()
-            zz = (areaImg == area.max())
-            # zz now contains the spanning cluster
-    #            figure()
-    #            imshow(zz, interpolation='nearest', origin='upper') # Display spanning cluster
-    #            savefig("current.pdf")
-            #show()
-            #% Run walk on this cluster
-            l,r = walk(zz)    
-        #    figure()
-        #    imshow(l, interpolation='nearest', origin='upper')
-        #    figure()
-        #    imshow(r, interpolation='nearest', origin='upper')
-            zzz = l*r # Find points where both l and r are non-zero
-            Msc[i] += sum(zzz > 0)
-    Msc[i] /= nSamples
-plot(L, Msc)
-show()
+p = pc - 0.02
+lx = ly = L = 256
+ncount = 0
+perc = []
+idString = "L" + str(L)
+while (len(perc)==0):
+    ncount = ncount + 1
+    if (ncount >100):
+        print "Couldn't make percolation cluster..."
+        break
+    
+    z=rand(lx,ly)<p
+    lw,num = measurements.label(z)
+    perc_x = intersect1d(lw[0,:],lw[-1,:])
+    perc = perc_x[where(perc_x > 0)]
+    print ncount
+
+if len(perc) > 0:
+    zz = (lw == perc[0])
+    # zz now contains the spanning cluster
+    figure()
+    imshow(zz, interpolation='nearest', origin='upper', cmap=colormap) # Display spanning cluster
+    savefig("results/1m/exwalk-" + idString + ".pdf", dpi=300)
+    #show()
+    #% Run walk on this cluster
+    l,r = walk(zz)    
+    figure()
+    imshow(l, interpolation='nearest', origin='upper', cmap=colormap)
+    savefig("results/1m/leftwalk-" + idString + ".pdf", dpi=300)
+    figure()
+    imshow(r, interpolation='nearest', origin='upper', cmap=colormap)
+    savefig("results/1m/rightwalk-" + idString + ".pdf", dpi=300)
+    zzz = (l*r > 0) # Find points where both l and r are non-zero
+    figure()
+    imshow(zzz * 2 + zz, interpolation='nearest', origin='upper', cmap=colormap)
+    savefig("results/1m/bothwalk-" + idString + ".pdf", dpi=300)
+    show()

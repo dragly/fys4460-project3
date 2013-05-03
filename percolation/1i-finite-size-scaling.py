@@ -16,9 +16,9 @@ pc = 0.59275
 #kappa = arange(4,12)
 #Ls = 2**kappa
 #Ls = [800]
-Ls = [25,50,100,200,400,800]
+Ls = array([25,50,100,200,400,800])
     
-nSamples = 5000
+nSamples = 500
 M = zeros(len(Ls))
 i = 0
 nValues = 100
@@ -31,7 +31,7 @@ idString = "nsamples" + str(nSamples) + "-nvalues" + str(nValues)
 
 for k in range(len(Ls)):
     if Ls[k] > 300:
-        nSamples = 200
+        nSamples = 40
     L = Ls[k]
     print "Calculating for L=" + str(L)
     for i in range(len(p)):
@@ -61,18 +61,46 @@ savefig("results/1i/p-vs-L-" + idString + ".pdf")
 
 figure()
 pPiDiff = pPi08 - pPi03
-plot(log(Ls), log(pPiDiff))
-xlabel(r"$\log L$")
-ylabel(r"$\log (p_{\Pi=0.8} - p_{\Pi=0.3})$")
-savefig("results/1i/p-vs-L-loglog-" + idString + ".pdf")
+plot(log10(Ls), log10(pPiDiff),'-o')
+xlabel(r"$\log10 L$")
+ylabel(r"$\log10 (p_{\Pi=0.8} - p_{\Pi=0.3})$")
+savefig("results/1i/p-vs-L-log10log10-" + idString + ".pdf")
 
 figure()
-pPiDiffDeriv = diff(log(pPiDiff)) / diff(log(Ls))
-plot(log(Ls)[:-1], pPiDiffDeriv)
-xlabel(r"$\log L$")
-ylabel(r"$d \log (p_{\Pi=0.8} - p_{\Pi=0.3}) / d\log L$")
-savefig("results/1i/p-vs-L-loglog-diff-" + idString + ".pdf")
+pPiDiffDeriv = diff(log10(pPiDiff)) / diff(log10(Ls))
+plot(log10(Ls)[:-1], pPiDiffDeriv,'-o')
+xlabel(r"$\log10 L$")
+ylabel(r"$d \log10 (p_{\Pi=0.8} - p_{\Pi=0.3}) / d\log10 L$")
+savefig("results/1i/p-vs-L-log10log10-diff-" + idString + ".pdf")
 
+nu = -1 / (log10(pPiDiff)[-1] - log10(pPiDiff)[0])/(log10(Ls)[-1] - log10(Ls)[0])
+print nu
+savetxt("results/1i/nu.txt", [nu])
+
+exactNu = 1.3
+figure()
+plot(Ls**(-1/exactNu), pPi08, '-o', label=r"$\Pi = 0.8$")
+plot(Ls**(-1/exactNu), pPi03, '-o', label=r"$\Pi = 0.3$")
+
+savefig("results/1i/pPi-vs-Lpower-" + idString + ".pdf")
+
+linreg08 = polyfit(Ls**(-1/exactNu), pPi08, deg=1)
+pc08 = linreg08[1]
+print "pc08=", pc08
+linreg03 = polyfit(Ls**(-1/exactNu), pPi03, deg=1)
+pc03 = linreg03[1]
+print "pc08=", pc03
+
+newX = linspace(0,0.1,10)
+
+plot(newX, poly1d(linreg03)(newX), label="polyfit")
+plot(newX, poly1d(linreg08)(newX), label="polyfit")
+xlabel(r"$L^{-1/\nu}$")
+ylabel(r"$p_{\Pi=x}$")
+legend()
+
+
+savefig("results/1i/pPi-vs-Lpower-polyfit-" + idString + ".pdf")
 
 show()
 

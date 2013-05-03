@@ -9,7 +9,7 @@
 \author{Svenn-Arne Dragly}
 
 \begin{abstract}
-In this project we are working with percolation, the study of connectivity and other properties in random media.
+In this project we are working with percolation - the study of connectivity and other properties in random media. We start out with a matrix of uncorrelated randomly occupied sites.
 \end{abstract}
 
 \maketitle
@@ -263,7 +263,10 @@ Meaning that we should be able to read off the gradient in a loglog plot of $\lo
   \caption{loglog plot of the probability for a site to be part of the spanning cluster $\log P(p,L)$ plotted as a function of $\log (p-p_{c})$. This was found by sampling $P$ for $500$ random binary matrices for different values of $p$.}
   \label{fig:logP-vs-logp}
 \end{figure}
-By taking the derivative of this function (numerically) we get the plot shown in figure \ref{fig:logP-vs-logp-derivative}. From this plot we may read off the lowest value of the derivative as an estimate for $\beta$. In this case it appears to be about $\beta = 0.17$.
+By taking the derivative of this function (numerically) we get the plot shown in figure \ref{fig:logP-vs-logp-derivative}. From this plot we may read off the lowest value of the derivative as an estimate for $\beta$. In this case it appears to be about 
+\begin{equation}
+\beta = 0.17.             
+\end{equation} 
 This is a bit higher than what is the expected value of $\beta = 0.14$.
 \begin{figure}
   \centering
@@ -342,7 +345,7 @@ It is interesting to see what happens to the cluster number density as $p$ appro
   \label{fig:cluster-number-density}
 \end{figure*}
 
-\subsection{Finding $\tau$}
+\subsection{Finding cluster number density scaling}
 
 Furthermore, we are interested in seeing how the cluster number density at $p_c$ varies as a function of $s$ with the system size $L$. This is shown in figure \ref{fig:cluster-number-density-systemsize}.
 %
@@ -427,10 +430,10 @@ The mass $M(L)$ of the percolating cluster is shown in figure \ref{fig:mass-scal
 \begin{equation}
   M(L) = L^{D}
 \end{equation}
-It was found by taking the derivative of the loglog version of figure \ref{fig:mass-scaling} to be
+It was found to be
 \begin{equation}
   D \approx 1.86.
-\end{equation} 
+\end{equation}
 \begin{figure}
   \centering
   \includegraphics[width=0.45\textwidth]{../percolation/results/1h/M-vs-L-nsamples10000.pdf}
@@ -441,6 +444,134 @@ It was found by taking the derivative of the loglog version of figure \ref{fig:m
 
 \subsection{Finite size scaling}
 
+We define $p_{\Pi=x}$ so that 
+\begin{equation}
+  \Pi(p_{\Pi=x}) = x.
+\end{equation} 
+This means that $p_{\Pi=0.3}$ as an example is the value of $p$ for which we have $0.3$ probability of getting a spanning cluster.
 
+The next challenge on the list is to find $\nu$, namely scaling parameter $\nu$, related to $\xi$ and $\xi_{0}$.
+According to scaling theory, we have
+\begin{equation}
+  \xi = \xi_0 (p_{c} - p)^{-\nu}
+\end{equation} 
+We may use this to come to the scaling theory
+\begin{equation}
+  p_{x_{1}} - p_{x_{2}} = (C_{x_{1}} - C_{x_{2}}) L^{-1/\nu}
+\end{equation} 
+With this, we are able to vary our values for $L$, make a huge amount of samples and find the probability of having a spanning cluster, $\Pi$ for different values of $p$. It is possible by using the halving method or any minimization scheem to find whenever $\Pi = x_{1}$ and $\Pi = x_{2}$. I have however done it the simplest possible way, by plotting $\Pi(p)$ for different $L$ in figure \ref{fig:spanning-cluster-probability} and picking the last value where $\Pi$ is below $x_{1}$ and $x_{2}$.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1i/Pi-vs-p-nsamples5000-nvalues100.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{Probability of spanning cluster as a function of $p$.}
+  \label{fig:spanning-cluster-probability}
+\end{figure}
+%
+We chose to use $x_{1}= 0.3$ and $x_{2} = 0.8$, made a bunch of measurements and found the relation between $p_{\Pi=0.3}$, $p_{\Pi=0.8}$ and $L$. This proved to be a linear relation, and by taking the incline of the loglog plot, we found 
+\begin{equation}
+  \nu = 1.34.
+\end{equation} 
+This is a pretty decent approximation to the real value.
 
+The good part about this is that we didn't really use any assumption about the value of $p_{c}$ to get the value of $\nu$. This enables us to find the real value of $p_{c}$ based on our data. We know that
+\begin{equation}
+  p_{\Pi=x} = p_{c} + C_{x} L^{-1/\nu}
+\end{equation} 
+To measure $p_{c}$ we may make any assumption about the value of $C_{x}$ that we want and measure $p_{\Pi=x}$ as a function of $L^{-1/\nu}$. If we look at where the function cuts through the $p_{\Pi=x}$ axis, we get the value of $p_{c}$.
+
+This has been done and the result is shown in figure \ref{fig:polyfit-pc}. With this we find a value of
+\begin{equation}
+  p_{c} = 0.5922
+\end{equation} 
+which is pretty close to the real value of $p_{c} = 0.59275$.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1i/pPi-vs-Lpower-polyfit-nsamples500-nvalues100.pdf}
+  % matrix.png: 800x600 pixel, 100dpi, 20.32x15.24 cm, bb=0 0 576 432
+  \caption{Plot of the scaling relation $p_{\Pi=x} = p_{c} + C_{x} L^{-1/\nu}$ with polyfit applied to find $p_{c}$. The value of $p_{c}$ is found to be $p_{c} = 0.5922$.}
+  \label{fig:polyfit-pc}
+\end{figure}
+%
+
+\subsection{Singly connected bonds}
+
+Using left/right-turning walkers we may locate the singly connected bonds as the sites where both walkers travel through. The result of such a walk is shown in figure \ref{fig:bothwalk}.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1m/bothwalk-L256.pdf}
+  \caption{Spanning cluster shown in light blue and singly connected bonds shown in white. The singly connected bonds are found by the use of one left-turning and one right-turning walker.}
+  \label{fig:bothwalk}
+\end{figure}
+%
+By doing this multiple times we are able to find the relation between system size $L$ and the mass of the singly connected bonds. This may be used to estimate the exponent $D_{SC}$ in
+\begin{equation}
+  M_{SC} \propto L^{D_{SC}}
+\end{equation}
+which by the usual means of a loglog plot was found to be
+\begin{equation}
+  D_{SC} \approx 0.76.
+\end{equation} 
+using $5000$ samples for $L \in [25,50,100,200,400,600]$.
+%TODO find the behaviour of P_SC
+
+\subsection{Flow on fractals}
+
+The currents on the spanning cluster are visualized in figure \ref{fig:flow}.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1o/flux-L256-p0_58.pdf}
+  \caption{Currents on the spanning cluster in a $256 \times 256$ grid.}
+  \label{fig:flow}
+\end{figure}
+%
+The singly connected bonds, the backbone and the dangling ends of the spanning cluster are visualized in figure \ref{fig:sc-bb-de}.
+%
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1o/sc-bb-de-L256-p0_58.pdf}
+  \caption{The singly connected bonds (red), the backbone (yellow) and the dangling ends (green) of the spanning cluster.}
+  \label{fig:sc-bb-de}
+\end{figure}
+%
+The conductivity is found by the same script by finding the flow out of the spanning cluster through the last column in the matrix and dividing this by the total pressure difference. By finding the conductivity of the cluster at $p=p_{c}$ for different values of $L$, we find
+\begin{equation}
+  \zeta_R = 0.977
+\end{equation}
+The dimensionalities are found to be
+\begin{equation}
+  D = 1.87
+\end{equation}
+\begin{equation}
+  D_{SC} = 0.79
+\end{equation} 
+\begin{equation}
+  D_{BB} = 1.61
+\end{equation} 
+\begin{equation}
+  D_{DE} = 2.09
+\end{equation}
+where we have applied the usual method of creating a loglog plot and finding the incline.
+
+To find the exponent $\mu$, we have also measured the relation between $|p-p_{c}|$ and $C$. We are hoping to find a relation like
+\begin{equation}
+  G \propto |p-p_{c}|^{\mu}
+\end{equation} 
+By the usual means of a loglog plot, this was measured for different values of $L$. This gives different values of $\mu$ for different $L$, but a plot of $\mu$ against $L$ in figure \ref{fig:mu-vs-L} shows that there is a convergence towards the value of
+\begin{equation}
+  \mu = 1.28.
+\end{equation}
+This plot was generated using $p$-values in the range $p \in [0.62, 0.85]$ and $600$ samples for each combination of $p$ and $L$ for $L<300$ and $60$ samples for $L \geq 300$.
+
+This might indicate that the asymptote is going towards a value just above $1$ or exactly equal to $1$.
+\begin{figure}
+  \centering
+  \includegraphics[width=0.45\textwidth]{../percolation/results/1p/mu-vs-L-nsamples600.pdf}
+  \caption{The exponent $\mu$ as a function of system size $L$.}
+  \label{fig:mu-vs-L}
+\end{figure}
 \end{document}

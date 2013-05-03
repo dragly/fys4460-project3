@@ -12,9 +12,9 @@ from walk import walk
 # exwalk.py 
 # Generate spanning cluster (l-r spanning)
 
-lx = 1000
-ly = 1000
-p = 0.586
+lx = 100
+ly = 100
+p = 0.6
 ncount = 0
 perc = []
 while (len(perc)==0):
@@ -30,11 +30,12 @@ while (len(perc)==0):
     print ncount
 
 if len(perc) > 0:
-    labelList = arange(num + 1)
-    area = measurements.sum(z, lw, index=labelList)
-    areaImg = area[lw]
-    maxArea = area.max()
-    zz = (areaImg == area.max())
+#    labelList = arange(num + 1)
+#    area = measurements.sum(z, lw, index=labelList)
+#    areaImg = area[lw]
+#    maxArea = area.max()
+    zz = (lw == perc[0])
+    
     # zz now contains the spanning cluster
     figure()
     imshow(zz, interpolation='nearest', origin='upper') # Display spanning cluster
